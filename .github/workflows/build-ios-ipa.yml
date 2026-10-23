@@ -37,7 +37,9 @@ jobs:
           cache: pnpm
 
       - name: Install JS dependencies
-        run: pnpm install --frozen-lockfile
+        # The committed pnpm-lock.yaml can lag behind package.json (dependabot
+        # bumps the overrides without regenerating it), so do not freeze.
+        run: pnpm install --no-frozen-lockfile
 
       - name: Build web assets
         env:

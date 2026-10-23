@@ -1,0 +1,123 @@
+name: Build unsigned iOS IPA
+
+# Shazarr is a Vite + React app packaged with Capacitor (not Expo). The iOS
+# project is committed under ios/App, so the build is: compile the web assets,
+# let Capacitor copy them into the native project, then archive with Xcode.
+# The resulting IPA is unsigned: sign it with AltStore/Sideloadly before use.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build unsigned IPA
+    runs-on: macos-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install JS dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web assets
+        env:
+          GENERATE_SOURCEMAP: 'false'
+          VITE_CURRENT_VERSION: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v0.0.0-dev' }}
+        run: pnpm run build
+
+      - name: Select newest Xcode 26
+        run: |
+          PICK=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -n1 || true)
+          if [ -n "$PICK" ]; then
+            sudo xcode-select -s "$PICK"
+          fi
+          xcodebuild -version
+
+      - name: Raise iOS deployment target for Capacitor 8
+        run: |
+          # The committed Podfile targets iOS 13, but Capacitor 8 requires 15.
+          sed -i '' "s/platform :ios, '13.0'/platform :ios, '15.0'/" ios/App/Podfile
+
+      - name: Sync Capacitor iOS project
+        run: npx cap sync ios
+
+      - name: Build unsigned archive
+        working-directory: ios/App
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          if [ "${{ github.ref_type }}" != "tag" ]; then
+            VERSION="0.0.0"
+          fi
+          xcodebuild archive \
+            -workspace App.xcworkspace \
+            -scheme Shazarr \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath build/Shazarr.xcarchive \
+            -jobs "$(sysctl -n hw.ncpu)" \
+            IPHONEOS_DEPLOYMENT_TARGET=15.0 \
+            MARKETING_VERSION="$VERSION" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            ONLY_ACTIVE_ARCH=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO \
+            ENABLE_USER_SCRIPT_SANDBOXING=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM="" \
+            SKIP_INSTALL=NO
+
+      - name: Package IPA
+        run: |
+          APP_PATH=$(find ios/App/build/Shazarr.xcarchive/Products/Applications -maxdepth 1 -name "*.app" -type d | head -n1)
+          if [ -z "$APP_PATH" ]; then
+            echo "::error::No .app found in the archive"
+            ls -R ios/App/build/Shazarr.xcarchive/Products || true
+            exit 1
+          fi
+          echo "App: $APP_PATH"
+          rm -rf Payload
+          mkdir Payload
+          cp -R "$APP_PATH" Payload/
+          zip -qry "Shazarr-${GITHUB_REF_NAME}.ipa" Payload
+          rm -rf Payload
+          ls -lh *.ipa
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Shazarr-ipa
+          path: Shazarr-*.ipa
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Attach IPA to an existing Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "Shazarr-${GITHUB_REF_NAME}.ipa" --clobber
+          else
+            echo "No release for $GITHUB_REF_NAME; the IPA is available as a workflow artifact."
+          fi

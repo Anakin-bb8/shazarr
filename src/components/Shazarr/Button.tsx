@@ -59,18 +59,20 @@ const ListenButton = styled.div`
 `;
 
 /* The signature element: a glass disc over the brand aurora, with an accent
-   ring that breathes while listening. Everything else on the screen is quiet. */
+   halo that breathes while listening. Everything else on the screen is quiet. */
 const Round = styled.div<{ isAnimate: boolean }>`
   align-items: center;
-  background-image: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.2),
-    rgba(255, 255, 255, 0.06)
-  );
+  background-color: var(--sz-glass-tint);
+  background-image:
+    radial-gradient(120% 90% at 30% 8%, rgba(255, 255, 255, 0.24) 0%, transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04));
   -webkit-backdrop-filter: blur(30px) saturate(180%);
   backdrop-filter: blur(30px) saturate(180%);
   border: 1px solid var(--sz-glass-stroke);
-  box-shadow: var(--sz-glass-shadow), inset 0 1px 0 var(--sz-glass-highlight);
+  box-shadow:
+    var(--sz-glass-shadow),
+    inset 0 1px 0 var(--sz-glass-highlight),
+    inset 0 -12px 30px rgba(0, 0, 0, 0.18);
   border-radius: 100%;
   display: flex;
   justify-content: center;
@@ -80,41 +82,45 @@ const Round = styled.div<{ isAnimate: boolean }>`
   width: 9rem;
 
   .sz-hero-glyph {
-    font-size: 3.2rem;
+    font-size: 3rem;
     fill: var(--sz-content);
-    opacity: 0.92;
+    opacity: 0.95;
   }
 
   .sz-hero-glyph-img {
-    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+    filter: brightness(0) invert(1) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+    opacity: 0.95;
   }
 
   &:before {
     background: radial-gradient(
       circle at 50% 50%,
-      color-mix(in srgb, var(--sz-accent) 60%, transparent) 0%,
-      transparent 70%
+      color-mix(in srgb, var(--sz-accent) 34%, transparent) 0%,
+      transparent 68%
     );
     border-radius: 100%;
     content: "";
+    filter: blur(14px);
+    opacity: ${({ isAnimate }) => (isAnimate ? 1 : 0.45)};
     position: absolute;
-    inset: -14px;
+    inset: -18px;
+    transition: opacity 240ms ease-out;
     z-index: -1;
     animation: ${({ isAnimate }) => (isAnimate ? "hero-breathe 2.2s ease-in-out infinite" : "none")};
   }
 
   @keyframes hero-breathe {
     0% {
-      transform: scale(0.96);
-      opacity: 0.7;
+      transform: scale(0.97);
+      opacity: 0.55;
     }
     50% {
-      transform: scale(1.08);
-      opacity: 1;
+      transform: scale(1.05);
+      opacity: 0.95;
     }
     100% {
-      transform: scale(0.96);
-      opacity: 0.7;
+      transform: scale(0.97);
+      opacity: 0.55;
     }
   }
 `;

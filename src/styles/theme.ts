@@ -23,7 +23,7 @@ export function buildTheme(mode: AppMode) {
   return createTheme({
     palette: {
       mode,
-      primary: { main: "#0a84ff", contrastText: "#ffffff" },
+      primary: { main: mode === "dark" ? "#0a6fd6" : "#0066cc", contrastText: "#ffffff" },
       success: { main: mode === "dark" ? "#30d158" : "#12a150" },
       warning: { main: mode === "dark" ? "#ff9f0a" : "#c96a00" },
       error: { main: mode === "dark" ? "#ff453a" : "#d92b21" },

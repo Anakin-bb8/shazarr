@@ -1,4 +1,4 @@
-import { registerPlugin, type PluginListenerHandle } from "@capacitor/core";
+import { Capacitor, registerPlugin, type PluginListenerHandle } from "@capacitor/core";
 
 export type LiveActivityPhase = "listening" | "result" | "error";
 
@@ -28,6 +28,46 @@ export interface LiveActivityPlugin {
 
 /**
  * Bridge to the native ActivityKit Live Activity shown in the Dynamic Island.
- * No-ops on the web build (the calls reject, every call site swallows that).
+ * Only exists in the iOS build; the facade below keeps every other platform
+ * silent instead of throwing "plugin is not implemented on web".
  */
 export const LiveActivity = registerPlugin<LiveActivityPlugin>("LiveActivity");
+
+const isIOS = () => Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios";
+
+export const liveActivity = {
+  async start(levels?: number[]) {
+    if (!isIOS()) return;
+    await LiveActivity.start(levels ? { levels } : undefined).catch(() => {});
+  },
+
+  async update(state: LiveActivityState) {
+    if (!isIOS()) return;
+    await LiveActivity.update(state).catch(() => {});
+  },
+
+  async stop() {
+    if (!isIOS()) return;
+    await LiveActivity.stop().catch(() => {});
+  },
+
+  /** True only for a fresh "Riconosci un brano" shortcut run. */
+  async consumePendingRecognize(): Promise<boolean> {
+    if (!isIOS()) return false;
+    try {
+      const { pending } = await LiveActivity.consumePendingRecognize();
+      return pending;
+    } catch {
+      return false;
+    }
+  },
+
+  /** Fires when the shortcut runs while the app is already alive. */
+  onPendingRecognize(handler: () => void): () => void {
+    if (!isIOS()) return () => {};
+    const handle = LiveActivity.addListener("pendingRecognize", handler).catch(() => undefined);
+    return () => {
+      handle.then((listener) => listener?.remove()).catch(() => {});
+    };
+  },
+};

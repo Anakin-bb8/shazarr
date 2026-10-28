@@ -13,7 +13,7 @@ import { HistoryItem } from "../History/context";
 import { useHistoryProvider } from "../History/useHistory";
 
 import { mockRecordBase64 } from "./mock/recordBase64";
-import { LiveActivity } from "./liveActivity";
+import { liveActivity } from "./liveActivity";
 import { RecordingStatusType, ShazarrContext } from "./context";
 import { transcodePCM16 } from "./utils";
 
@@ -79,13 +79,13 @@ export function ShazarrProvider({ children }: { children: ReactNode }) {
         const drift = Math.sin(seconds * 0.9 + phase * 1.7) * 0.12;
         return Math.min(1, Math.max(0.16, 0.55 + wave * 0.32 + drift));
       });
-      LiveActivity.update({ phase: "listening", levels }).catch(() => {});
+      void liveActivity.update({ phase: "listening", levels });
     }, 280);
   }, [stopLevelStream]);
 
   const stopLiveActivity = useCallback(() => {
     stopLevelStream();
-    LiveActivity.stop().catch(() => {});
+    void liveActivity.stop();
   }, [stopLevelStream]);
 
   const dismissInlineResult = () => {
@@ -146,24 +146,24 @@ export function ShazarrProvider({ children }: { children: ReactNode }) {
           addItemToHistory(historyItem);
           setShowInlineResult(true);
           stopLevelStream();
-          LiveActivity.update({
+          void liveActivity.update({
             phase: "result",
             levels: FLAT_LEVELS,
             title: response.title,
             artist: response.subtitle,
             artworkURL: response.images?.coverart,
             downloadURL: `shazarr://track?key=${encodeURIComponent(response.key)}`,
-          }).catch(() => {});
+          });
         } else {
           setRecordingError("SHAZARR_NOT_FOUND" as never);
-          LiveActivity.update({ phase: "error" }).catch(() => {});
+          void liveActivity.update({ phase: "error" });
           window.setTimeout(stopLiveActivity, 4000);
         }
       })
       .catch((err) => {
         console.error("shazarr:", err);
         setRecordingError("SHAZAM_API_ERROR" as never);
-        LiveActivity.update({ phase: "error" }).catch(() => {});
+        void liveActivity.update({ phase: "error" });
         window.setTimeout(stopLiveActivity, 4000);
       })
       .finally(async () => {
@@ -195,7 +195,7 @@ export function ShazarrProvider({ children }: { children: ReactNode }) {
       vibrateAction();
       setRecordingStatus("recording");
 
-      LiveActivity.start().catch(() => {});
+      void liveActivity.start();
       startLevelStream();
 
       const { value: isRecording } = await VoiceRecorder.startRecording();
@@ -269,26 +269,24 @@ export function ShazarrProvider({ children }: { children: ReactNode }) {
       setTimeout(() => startRecording(), 300);
     };
 
-    const listener = LiveActivity.addListener("pendingRecognize", () => {
-      LiveActivity.consumePendingRecognize().catch(() => {});
+    const unsubscribe = liveActivity.onPendingRecognize(() => {
+      void liveActivity.consumePendingRecognize();
       triggerRecognize();
     });
 
     const timers = [0, 600, 1500, 3000].map((delay) =>
       window.setTimeout(() => {
         if (cancelled) return;
-        LiveActivity.consumePendingRecognize()
-          .then(({ pending }) => {
-            if (pending) triggerRecognize();
-          })
-          .catch(() => {});
+        liveActivity.consumePendingRecognize().then((pending) => {
+          if (pending) triggerRecognize();
+        });
       }, delay),
     );
 
     return () => {
       cancelled = true;
       timers.forEach((timer) => window.clearTimeout(timer));
-      listener.then((handle) => handle.remove()).catch(() => {});
+      unsubscribe();
     };
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, []);

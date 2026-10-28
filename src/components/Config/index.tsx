@@ -1,5 +1,5 @@
 import { FormEvent, useState } from "react";
-import { Album, ExpandMore } from "@mui/icons-material";
+import { Album, ExpandMore, MusicNote } from "@mui/icons-material";
 import {
   Accordion,
   AccordionDetails,
@@ -161,16 +161,14 @@ export default function Config({ open, onClose }: Props) {
         width: 24,
         height: 24,
         backgroundColor: "primary.main",
-        borderRadius: "4px",
+        borderRadius: "6px",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         color: "white",
-        fontSize: "12px",
-        fontWeight: "bold",
       }}
     >
-      S
+      <MusicNote sx={{ fontSize: 16 }} />
     </Box>
   );
 
@@ -188,6 +186,7 @@ export default function Config({ open, onClose }: Props) {
         },
       }}
     >
+      <div className="sz-sheet-grabber" aria-hidden="true" />
       <Box
         component="form"
         onSubmit={(e) => saveConfig(e)}

@@ -1,16 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { App } from "@capacitor/app";
-import { PauseCircleFilled, PlayCircleFilled, Refresh } from "@mui/icons-material";
-import { Button, CardActions, CardMedia } from "@mui/material";
-import Box from "@mui/material/Box";
-import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
-import Typography from "@mui/material/Typography";
+import { PauseRounded, PlayArrowRounded } from "@mui/icons-material";
+import { Box, Button, Card, CardContent, CardMedia, Typography } from "@mui/material";
 import { ShazamTrack } from "shazam-api/dist/types";
 
 import { ImageWithFallback } from "../../Common/ImageWithFallback";
 
-export default function CardResult({ data, onClose }: { data: ShazamTrack; onClose: () => void }) {
+/**
+ * Hero for the matched track: artwork first, then the two things people came
+ * for (title, artist), then a single action. Everything else lives in the
+ * metadata list below, so this card stays quiet.
+ */
+export default function CardResult({ data }: { data: ShazamTrack }) {
   const [isPlaying, setIsPlaying] = useState<boolean>();
 
   const sampleURI = useMemo(
@@ -50,49 +51,43 @@ export default function CardResult({ data, onClose }: { data: ShazamTrack; onClo
   }, [sample]);
 
   return (
-    <Card sx={{ maxWidth: 280, margin: "0 auto 1rem" }}>
-      <CardMedia>
-        <ImageWithFallback width="400" alt="" src={data.images.coverart} />
+    <Card sx={{ maxWidth: 340, margin: "0 auto" }}>
+      <CardMedia sx={{ aspectRatio: "1 / 1", lineHeight: 0 }}>
+        <ImageWithFallback width="400" alt={`${data.title} cover`} src={data.images.coverart} />
       </CardMedia>
-      <CardContent>
-        <Typography gutterBottom variant="h5" component="div">
+
+      <CardContent sx={{ padding: "1rem 1rem 0.5rem" }}>
+        <Typography
+          variant="h5"
+          component="h2"
+          sx={{ fontSize: "1.25rem", lineHeight: 1.2, marginBottom: "0.15rem" }}
+        >
           {data.title}
         </Typography>
-        <Typography variant="body1" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" sx={{ fontSize: "0.95rem" }}>
           {data.subtitle}
         </Typography>
       </CardContent>
+
       {sample && (
-        <CardActions>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              width: "100%",
-              px: 2,
-              pb: 2,
-            }}
+        <Box sx={{ display: "flex", justifyContent: "center", padding: "0.25rem 1rem 1rem" }}>
+          <Button
+            variant={isPlaying ? "outlined" : "contained"}
+            disableElevation
+            startIcon={
+              isPlaying ? (
+                <PauseRounded sx={{ height: 20, width: 20 }} />
+              ) : (
+                <PlayArrowRounded sx={{ height: 20, width: 20 }} />
+              )
+            }
+            aria-label={isPlaying ? "Pause preview" : "Play preview"}
+            onClick={togglePlayPause}
+            sx={{ paddingX: 3 }}
           >
-            <Button
-              variant="outlined"
-              startIcon={
-                isPlaying ? (
-                  <PauseCircleFilled sx={{ height: 24, width: 24 }} />
-                ) : (
-                  <PlayCircleFilled sx={{ height: 24, width: 24 }} />
-                )
-              }
-              aria-label={isPlaying ? "pause" : "play"}
-              onClick={togglePlayPause}
-            >
-              {isPlaying ? "Pause" : "Play"}
-            </Button>
-            &nbsp;
-            <Button onClick={onClose} variant="outlined" color="warning">
-              <Refresh style={{ transform: "rotate(-180deg)" }} />
-            </Button>
-          </Box>
-        </CardActions>
+            {isPlaying ? "Pause" : "Play"}
+          </Button>
+        </Box>
       )}
     </Card>
   );

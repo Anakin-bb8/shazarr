@@ -1,5 +1,5 @@
 import { Close } from "@mui/icons-material";
-import { Box, Button, Container, Drawer, useMediaQuery, useTheme } from "@mui/material";
+import { Box, Button, Container, Drawer, useMediaQuery } from "@mui/material";
 
 import HistoryCard from "./Card";
 import { useHistoryProvider } from "./useHistory";
@@ -12,7 +12,6 @@ interface Props {
 export default function HistoryList({ open, onClose }: Props) {
   const isLandscape = useMediaQuery("(orientation: landscape)");
   const { history } = useHistoryProvider();
-  const { palette } = useTheme();
 
   if (!history || history?.length === 0) return null;
 
@@ -25,8 +24,9 @@ export default function HistoryList({ open, onClose }: Props) {
         keepMounted: true,
       }}
     >
+      <div className="sz-sheet-grabber" aria-hidden="true" />
       <Box
-        sx={{ backgroundImage: palette.background.paper, paddingTop: 1, mb: isLandscape ? 2 : 5 }}
+        sx={{ paddingTop: 1, mb: isLandscape ? 2 : 5 }}
         data-testid="history-list"
       >
         <Container maxWidth="xs" sx={{ padding: "0 0.5rem" }}>

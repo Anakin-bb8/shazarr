@@ -16,15 +16,21 @@ export default function ShazarrButton() {
     actions: { startRecording, resetSearch },
   } = useShazarrProvider();
 
+  const isActive = recordingStatus !== "inactive" || shazarrLoading;
+
   return (
     <Box sx={{ position: "relative" }}>
-      {recordingStatus !== "inactive" ? (
+      {isActive ? (
         <NotesAnimate duration={recordingStatus === "recording" ? RECORD_DURATION : 0} />
       ) : null}
 
       <ListenButton>
         <IconButton
           data-testid="record-button"
+          aria-label={
+            recordingStatus === "inactive" ? "Recognize a song" : "Recognition in progress"
+          }
+          aria-pressed={recordingStatus === "recording"}
           onClick={() => {
             resetSearch();
             if (recordingStatus === "inactive") {
@@ -34,19 +40,11 @@ export default function ShazarrButton() {
         >
           <Round isAnimate={recordingStatus === "recording" || shazarrLoading}>
             {recordingStatus === "searching" ? (
-              <MoreHorizOutlined style={{ transform: "scale(1.6)", opacity: 0.5 }} />
+              <MoreHorizOutlined className="sz-hero-glyph" />
             ) : recordingStatus === "recording" ? (
-              <GraphicEqIcon style={{ transform: "scale(1.6)", opacity: 0.5 }} />
+              <GraphicEqIcon className="sz-hero-glyph" />
             ) : (
-              <>
-                <img
-                  src={skullImage}
-                  alt=""
-                  height="35"
-                  width="35"
-                  style={{ transform: "scale(1.6)", lineHeight: 0 }}
-                />
-              </>
+              <img src={skullImage} alt="" height="42" width="42" className="sz-hero-glyph-img" />
             )}
           </Round>
         </IconButton>
@@ -60,75 +58,63 @@ const ListenButton = styled.div`
   z-index: 10;
 `;
 
+/* The signature element: a glass disc over the brand aurora, with an accent
+   ring that breathes while listening. Everything else on the screen is quiet. */
 const Round = styled.div<{ isAnimate: boolean }>`
   align-items: center;
-  background: #fff;
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0.06)
+  );
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  backdrop-filter: blur(30px) saturate(180%);
+  border: 1px solid var(--sz-glass-stroke);
+  box-shadow: var(--sz-glass-shadow), inset 0 1px 0 var(--sz-glass-highlight);
   border-radius: 100%;
   display: flex;
   justify-content: center;
   line-height: 0;
-  padding: 2rem;
   position: relative;
-  height: 6rem;
-  width: 6rem;
+  height: 9rem;
+  width: 9rem;
 
-  svg {
-    fill: black;
+  .sz-hero-glyph {
+    font-size: 3.2rem;
+    fill: var(--sz-content);
+    opacity: 0.92;
+  }
+
+  .sz-hero-glyph-img {
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
   }
 
   &:before {
-    background-color: rgba(255, 255, 255, 0.2);
+    background: radial-gradient(
+      circle at 50% 50%,
+      color-mix(in srgb, var(--sz-accent) 60%, transparent) 0%,
+      transparent 70%
+    );
     border-radius: 100%;
     content: "";
-    height: 7rem;
-    width: 7rem;
     position: absolute;
-    left: 50%;
-    top: 50%;
-    margin-left: -3.5rem;
-    margin-top: -3.5rem;
-    z-index: 0;
-    animation: ${({ isAnimate }) => (isAnimate ? "button-animate 2s infinite linear" : "none")};
-    transition: transform 300ms ease;
+    inset: -14px;
+    z-index: -1;
+    animation: ${({ isAnimate }) => (isAnimate ? "hero-breathe 2.2s ease-in-out infinite" : "none")};
   }
 
-  img {
-    animation: ${({ isAnimate }) => (isAnimate ? "button-animate 2s infinite linear" : "none")};
-  }
-
-  @keyframes button-animate {
+  @keyframes hero-breathe {
     0% {
-      transform: scale(1.2);
-    }
-    10% {
-      transform: scale(1.4), rotate(-30deg);
-    }
-    20% {
-      transform: scale(1.3);
-    }
-    30% {
-      transform: scale(1.5);
-    }
-    40% {
-      transform: scale(1.3);
+      transform: scale(0.96);
+      opacity: 0.7;
     }
     50% {
-      transform: scale(1.2), rotate(30deg);
-    }
-    60% {
-      transform: scale(1.2);
-    }
-    70% {
-      transform: scale(1.4);
-    }
-    80% {
-      transform: scale(1.3);
-    }
-    90% {
-      transform: scale(1.5);
+      transform: scale(1.08);
+      opacity: 1;
     }
     100% {
-      transform: scale(1.2);
+      transform: scale(0.96);
+      opacity: 0.7;
     }
   }
 `;

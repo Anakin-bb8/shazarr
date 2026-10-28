@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Device } from "@capacitor/device";
 import { ThemeProvider } from "@emotion/react";
 import styled from "@emotion/styled";
-import { Box, Container, createTheme, CssBaseline, Stack, Typography } from "@mui/material";
+import { Box, Container, CssBaseline, Stack, Typography } from "@mui/material";
 
 import { AlertHandler } from "./components/Common/Alert/AlertHandler";
 import { Analytics } from "./components/Common/Analytics";
@@ -13,52 +13,57 @@ import ShazarrButton from "./components/Shazarr/Button";
 import { ShazarrProvider } from "./components/Shazarr/Provider";
 import ShazarrResults from "./components/Shazarr/Result";
 import StatusChip from "./components/Shazarr/ui/StatusChip";
+import { buildTheme } from "./styles/theme";
 
-const darkTheme = createTheme({
-  palette: {
-    mode: "dark",
-    background: {
-      default: "#153b50",
-      paper: "#0a1d28",
-    },
-  },
-});
+function useSystemMode() {
+  const [mode, setMode] = useState<"dark" | "light">(() =>
+    typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: light)").matches
+      ? "light"
+      : "dark",
+  );
+
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-color-scheme: light)");
+    const listener = (event: MediaQueryListEvent) => setMode(event.matches ? "light" : "dark");
+    query.addEventListener("change", listener);
+    return () => query.removeEventListener("change", listener);
+  }, []);
+
+  return mode;
+}
 
 function App() {
   const [devideOS, setDevideOS] = useState<"ios" | "android" | "web">();
+  const mode = useSystemMode();
+  const theme = buildTheme(mode);
 
   useEffect(() => {
     Device.getInfo().then(({ platform }) => setDevideOS(platform));
   }, []);
 
   return (
-    <ThemeProvider theme={darkTheme}>
+    <ThemeProvider theme={theme}>
       <ConfigProvider>
         <HistoryProvider>
           <ShazarrProvider>
             <CssBaseline />
             <Analytics />
+            <div className="sz-app-bg" aria-hidden="true" />
             <Main>
-              <Container>
+              <Container maxWidth="sm">
                 <StackStyled direction="column" os={devideOS}>
                   <Box>
                     <H1>Shazarr</H1>
-                    <Typography component="h2" sx={{ marginBottom: 2 }}>
-                      - Offroad Shazam app -
+                    <Typography component="h2" variant="h2" color="text.secondary">
+                      Offroad Shazam app
                     </Typography>
-                    <StatusChip />
+                    <StatusRow>
+                      <StatusChip />
+                    </StatusRow>
                   </Box>
-                  <Box
-                    sx={{
-                      marginTop: 3,
-                      flex: "1 1 0",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
+                  <ListenArea>
                     <ShazarrButton />
-                  </Box>
+                  </ListenArea>
                   <AlertHandler />
                 </StackStyled>
               </Container>
@@ -75,22 +80,39 @@ function App() {
 export default App;
 
 const H1 = styled.h1`
-  letter-spacing: 4px;
-  margin-bottom: 0;
-  text-transform: uppercase;
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  margin: 0;
+  line-height: 1;
 `;
 
 const Main = styled.main`
-  background-image: linear-gradient(180deg, #153b50 0%, #0a1d28 100%);
   display: flex;
   margin: 0;
   text-align: center;
-  min-height: 100vh;
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+`;
+
+const StatusRow = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 0.9rem;
+`;
+
+const ListenArea = styled(Box)`
+  margin-top: 2.5rem;
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 const StackStyled = styled(Stack)<{
   os: "ios" | "android" | "web" | undefined;
 }>`
-  min-height: 100vh;
-  padding: ${({ os }) => (os === "ios" ? "3rem 0" : 0)};
+  min-height: 100dvh;
+  padding: ${({ os }) => (os === "ios" ? "1.5rem 0 5rem" : "1.5rem 0 5rem")};
 `;

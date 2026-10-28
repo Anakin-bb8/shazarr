@@ -8,20 +8,22 @@ export default function StatusChip() {
   const { shazarrLoading, showInlineResult, recordingStatus } = useShazarrProvider();
   const { isNetworkConnected } = useConfigProvider();
 
+  const isBusy = recordingStatus !== "inactive" || shazarrLoading;
+  const signal = showInlineResult
+    ? "var(--sz-ok)"
+    : isBusy
+      ? "var(--sz-content)"
+      : !isNetworkConnected
+        ? "var(--sz-err)"
+        : "var(--sz-content-secondary)";
+
   return (
     <Chip
-      color={
-        showInlineResult
-          ? "success"
-          : shazarrLoading || recordingStatus === "recording"
-            ? "default"
-            : !isNetworkConnected
-              ? "error"
-              : "info"
-      }
+      aria-live="polite"
+      sx={{ color: signal, "& .MuiChip-icon": { color: signal } }}
       icon={
         recordingStatus && recordingStatus !== "inactive" ? (
-          <CircularProgress size={16} style={{ margin: "0 5px 0 10px" }} />
+          <CircularProgress size={16} style={{ margin: "0 5px 0 12px" }} />
         ) : showInlineResult ? (
           <Check fontSize="small" />
         ) : !isNetworkConnected ? (
@@ -32,9 +34,11 @@ export default function StatusChip() {
       }
       label={
         recordingStatus && recordingStatus !== "inactive"
-          ? `${recordingStatus}...`
+          ? recordingStatus === "recording"
+            ? "Listening…"
+            : "Recognizing…"
           : showInlineResult
-            ? "Found !"
+            ? "Found!"
             : !isNetworkConnected
               ? "Offline mode"
               : "Ready"

@@ -65,9 +65,10 @@ export default function ShazarrResults() {
 
   return (
     <Drawer anchor="bottom" open={!!data} onClose={onClose}>
+      <div className="sz-sheet-grabber" aria-hidden="true" />
       <Box sx={{ p: 2, display: "flex", gap: 2, flexDirection: isLandscape ? "row" : "column" }}>
         <Box sx={{ flex: "1 1 0" }}>
-          <CardResult data={data} onClose={onClose} />
+          <CardResult data={data} />
         </Box>
         <Box sx={{ flex: "1 1 0" }}>
           <Stack spacing={2} sx={{ marginBottom: 2, maxWidth: 360 }}>

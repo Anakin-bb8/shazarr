@@ -51,10 +51,10 @@ export default function BottomActions() {
         {formConfig && (
           <Fab
             size="small"
-            color="default"
             onClick={() => setConfigOpen(true)}
             disabled={disabled}
-            aria-label="Configuration"
+            aria-label="Settings"
+            sx={{ width: 46, height: 46 }}
           >
             <Settings />
           </Fab>
@@ -62,10 +62,10 @@ export default function BottomActions() {
         {history && history.length > 0 && (
           <Fab
             size="small"
-            color="default"
             onClick={() => setHistoryOpen(true)}
             disabled={disabled}
-            aria-label="Records"
+            aria-label="History"
+            sx={{ width: 46, height: 46 }}
           >
             <List />
           </Fab>
